@@ -1,10 +1,27 @@
 //! The owner gate from the outside: with no account that owns Minecraft: Java Edition in the
-//! launcher, neither `horizon-launcher play` nor the MCP server's play starts the game.
+//! launcher, neither `horizon-launcher play` nor the MCP server's play starts the game. While the
+//! gate is off (`account::REQUIRE_OWNER`), both get past it and stop at the next step instead: the
+//! version isn't prepared.
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 const REFUSED: &str = "Sign in with a Microsoft account that owns Minecraft: Java Edition to play.";
+const NOT_PREPARED: &str = "is not prepared yet";
+
+/// `account::REQUIRE_OWNER`, read from the source: the binary's constant isn't reachable here.
+fn gate_on() -> bool {
+    include_str!("../src/account.rs").contains("pub const REQUIRE_OWNER: bool = true;")
+}
+
+/// What play says: the gate's refusal, or with the gate off, the step after it.
+fn expected() -> &'static str {
+    if gate_on() {
+        REFUSED
+    } else {
+        NOT_PREPARED
+    }
+}
 
 /// Fresh homes with one installed (not prepared) version and an offline name, as a player who
 /// played offline before the gate has.
@@ -49,8 +66,12 @@ fn the_cli_refuses_to_play_without_an_owner() {
     let out = launcher(&root, &["play"]).output().unwrap();
     let said = text(&out);
     assert!(!out.status.success(), "{said}");
-    assert!(said.contains(REFUSED), "{said}");
-    assert!(said.contains("horizon-launcher account sign-in"), "{said}");
+    assert!(said.contains(expected()), "{said}");
+    if gate_on() {
+        assert!(said.contains("horizon-launcher account sign-in"), "{said}");
+    } else {
+        assert!(!said.contains(REFUSED), "{said}");
+    }
     // Nothing of the game ran, and the offline name is still there.
     assert!(!root.join("game/sessions").exists());
     let accounts = std::fs::read_to_string(root.join("launcher/accounts.json")).unwrap();
@@ -84,6 +105,6 @@ fn the_mcp_server_refuses_to_play_without_an_owner() {
         .expect("a reply to play");
     assert_eq!(reply["result"]["isError"], true, "{reply}");
     let said = reply["result"]["content"][0]["text"].as_str().unwrap();
-    assert!(said.contains(REFUSED), "{said}");
+    assert!(said.contains(expected()), "{said}");
     let _ = std::fs::remove_dir_all(&root);
 }

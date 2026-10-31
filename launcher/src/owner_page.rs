@@ -18,7 +18,7 @@ impl Launcher {
     /// an owner (`dev_options`) hides the gate, as if the keychain hadn't answered yet.
     pub(crate) fn owner_shown(&self) -> Option<bool> {
         match self.owner {
-            Some(false) if self.settings.dev_offline => None,
+            Some(false) if self.settings.offline_without_owner() => None,
             owner => owner,
         }
     }
