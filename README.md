@@ -1,3 +1,9 @@
+> [!NOTE]
+> **Launcher without authentication layer.** This build does not require signing in with a Microsoft
+> account: every launch plays offline. Single player, LAN, Play with Friends and `online-mode=false`
+> servers work; online-mode servers refuse offline players. The sign-in is kept in the code: set
+> `REQUIRE_OWNER` to `true` in `launcher/src/account.rs` to turn it back on.
+
 wtf
 <p align="center">
   <img src="docs/media/banner.webp" alt="Horizon: Minecraft: Java Edition 26.3, rewritten in Rust and checked against vanilla by more than 300 differential harnesses" width="100%">
