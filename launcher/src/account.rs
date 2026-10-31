@@ -22,6 +22,11 @@ pub const SERVICE: &str = "dev.playhorizon.launcher";
 const SCOPE: &str = "XboxLive.signin offline_access";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID), so it can't start the game.";
+/// The owner gate (sign in with a Microsoft account that owns Minecraft: Java Edition before the
+/// game starts) is off: every launch plays offline, as the offline name or the game's own name,
+/// without a session. Online-mode servers refuse such a player; LAN, single player and
+/// offline-mode servers work. Set it back to `true` to require the sign-in again.
+pub const REQUIRE_OWNER: bool = false;
 /// What every Play says while no account in the launcher owns the game.
 pub const NEEDS_OWNER: &str =
     "Sign in with a Microsoft account that owns Minecraft: Java Edition to play";
@@ -1017,7 +1022,7 @@ impl Accounts {
                 self.selected = Some(uuid);
             }
             Player::Offline(name) => {
-                if !offline_without_owner && !self.has_owner(store) {
+                if REQUIRE_OWNER && !offline_without_owner && !self.has_owner(store) {
                     return Err(OFFLINE_NEEDS_OWNER.into());
                 }
                 let name = self.add_offline(&name)?;
@@ -1227,7 +1232,7 @@ pub fn launch_for_game(
     offline_without_owner: bool,
 ) -> Result<Launch, NoOwner> {
     match launch(ep, client_id, store, accounts) {
-        Err(NoOwner) if offline_without_owner => Ok(Launch::default()),
+        Err(NoOwner) if offline_without_owner || !REQUIRE_OWNER => Ok(Launch::default()),
         pass => pass,
     }
 }

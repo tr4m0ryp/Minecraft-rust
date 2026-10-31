@@ -3067,6 +3067,12 @@ pub struct Settings {
 }
 
 impl Settings {
+    /// Offline names play without an account that owns the game: the developer option, or
+    /// always while the owner gate is off (`account::REQUIRE_OWNER`).
+    pub fn offline_without_owner(&self) -> bool {
+        self.dev_offline || !crate::account::REQUIRE_OWNER
+    }
+
     pub fn load() -> Self {
         Self::parse(&fs::read_to_string(data_dir().join("settings.json")).unwrap_or_default())
     }
